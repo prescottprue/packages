@@ -21,7 +21,7 @@ type PushMessage struct {
   Data   PushData `json:"data"`
   Where  PushWhere `json:"where"`
 }
-
+//Get Push Id from firebase then notify
 func NotifyUser(uid string, m string) int {
   fmt.Println("SendPushNotificaiton called");
   //[TODO] Replace this with a local SQL Database 

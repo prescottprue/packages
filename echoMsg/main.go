@@ -2,10 +2,11 @@ package echoMsg
 
 import (
 	"github.com/melvinmt/firebase"
-	"github.com/bessolabs/parsePush"
-	"github.com/bessolabs/s3Upload"
+	"github.com/bessolabs/packages/parsePush"
+	"github.com/bessolabs/packages/s3Upload"
 	"log"
 	"os"
+  "io"
 	"fmt"
 )
 type User struct {
@@ -34,6 +35,7 @@ type ResponseInfo struct {
   User User `json:"user"`
   Mid string  `json:"mid"`
   CreatedAt string `json:"createdAt"`
+  Id string `json:"id"`
 }
 func SendMsg(m *Message) int {
 	log.Println("SendMsg called with", m)
@@ -96,8 +98,9 @@ func UpdateImgUrl(m *Message) int {
 }
 //Send Response To Author and Recipients
 func SendResponse(ri *ResponseInfo) int {
-	l := 'userData/'+ ri.User.Uid + '/'+ ri.Mid + "/file.jpg"
-	if us, url := s3Upload.UploadImg(ri.Image,l); us != 200 {
+	l := "userData/"+ ri.User.Uid + "/"+ ri.Mid + "/file.jpg"
+	us, url := s3Upload.UploadImg(ri.Image,l)
+  if us != 200 {
 		fmt.Println("Error Uploading Image")
 	}
 	//Get response authors info from message
@@ -179,7 +182,7 @@ func GetMessage(mid string) *Message {
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
   //recipient url
-  var aUrl string
+  var mUrl string
   var ref *firebase.Reference
   var msg *Message
     //Send To Each Recipient
