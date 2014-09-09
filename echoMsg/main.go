@@ -88,13 +88,13 @@ func UpdateImgUrl(m *Message) int {
 
   // update image url
   imageRef := firebase.NewReference(mUrl+"/image").Auth(fbSecret).Export(false)
-  if err = imageRef.Write(&img); err != nil {
+  if err = imageRef.Write(&m.Image); err != nil {
       panic(err)
   }
 
   // update message id 
   msgRef := firebase.NewReference(mUrl+"/id").Auth(fbSecret).Export(false)
-  if err = msgRef.Write(&mid); err != nil {
+  if err = msgRef.Write(&m.Id); err != nil {
       panic(err)
   }
 
