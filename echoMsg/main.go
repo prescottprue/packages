@@ -3,10 +3,10 @@ package echoMsg
 import (
 	"github.com/melvinmt/firebase"
 	"github.com/bessolabs/packages/parsePush"
-	"github.com/bessolabs/packages/s3Upload"
+	// "github.com/bessolabs/packages/s3Upload"
 	"log"
 	"os"
-  "io"
+  // "io"
 	"fmt"
 )
 type User struct {
@@ -18,7 +18,7 @@ type Image struct {
 }
 type Message struct {
     Title string `json:"title"`
-    CreatedAt string `json:"createdAt"`
+    // CreatedAt string `json:"createdAt"`
     Recipients []string `json:"recipients"`
     User User `json:"user"`
     Image Image `json:"image"`
@@ -28,12 +28,18 @@ type Response struct {
 	CreatedAt string `json:"createdAt"`
 	User User `json:"user"`
 	Image Image `json:"image"`
+  Id string `json:"id"`
 }
+// When using io.Reader (s3 package)
+// type ResponseInfo struct {
+//   Image io.Reader `json:"image"`
+//   User User `json:"user"`
+//   Mid string  `json:"mid"`
+//   Id string `json:"id"`
+// }
 type ResponseInfo struct {
-  Image io.Reader `json:"image"`
+  Image Image `json:"image"`
   User User `json:"user"`
-  Mid string  `json:"mid"`
-  CreatedAt string `json:"createdAt"`
   Id string `json:"id"`
 }
 type BookmarkRequest struct {
@@ -109,29 +115,48 @@ func UpdateImgUrl(m *Message) int {
 
   return 200
 }
-//Send Response To Author and Recipients
-func SendResponse(ri *ResponseInfo) int {
-	l := "userData/"+ ri.User.Uid + "/"+ ri.Mid + "/file.jpg"
-	us, url := s3Upload.UploadImg(ri.Image,l)
-  if us != 200 {
-		fmt.Println("Error Uploading Image")
-	}
-	//Get response authors info from message
-	var r *Response
-	r.Image.Url = url
-	r.User.Uid = ri.User.Uid
-	r.User.DisplayName = ri.User.DisplayName
-	r.CreatedAt = "69696969696"
-	var m *Message
-	//Get original message object
-	m = GetMessage(ri.Mid)
+//Send Response with ri having io.Reader To Author and Recipients
+// func SendResponse(ri *ResponseInfo) int {
+// 	l := "userData/"+ ri.User.Uid + "/"+ ri.Mid + "/file.jpg"
+// 	us, url := s3Upload.UploadImg(ri.Image,l)
+//   if us != 200 {
+// 		fmt.Println("Error Uploading Image")
+// 	}
+// 	//Get response authors info from message
+// 	var r *Response
+// 	r.Image.Url = url
+// 	r.User.Uid = ri.User.Uid
+// 	r.User.DisplayName = ri.User.DisplayName
+// 	r.CreatedAt = "69696969696"
+// 	var m *Message
+// 	//Get original message object
+// 	m = GetMessage(ri.Mid)
+
+//   fmt.Println("SendResponse called for:", r)
+//   if as := AuthorSendResponse(m, r); as != 200 {
+//   	fmt.Println("Error Sending Response To Author:", as)
+//   }
+//   if rs := RecipientsSendResponse(m, r); rs != 200 {
+//   	fmt.Println("Error Sending Response To Recipients:", rs)
+//   }
+//   return 200
+// }
+//If responseInfo(ri) includes img url
+func SendResponse(r *Response) int {
+ //Get response authors info from message
+
+//Fill with example data for now
+ var m *Message
+ //Get original message object
+ m = GetMessage(r.Id)
+ m.CreatedAt = "69696969696"
 
   fmt.Println("SendResponse called for:", r)
   if as := AuthorSendResponse(m, r); as != 200 {
-  	fmt.Println("Error Sending Response To Author:", as)
+   fmt.Println("Error Sending Response To Author:", as)
   }
   if rs := RecipientsSendResponse(m, r); rs != 200 {
-  	fmt.Println("Error Sending Response To Recipients:", rs)
+   fmt.Println("Error Sending Response To Recipients:", rs)
   }
   return 200
 }
@@ -172,17 +197,25 @@ func AuthorSendResponse(m *Message, r *Response) int {
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
   //recipient url
-  var aUrl string
   var ref *firebase.Reference
-    //Send To Each Recipient
-    aUrl = fbUrl + "/users/" + m.User.Uid + "/messages/sent/" + m.Id + "/responses"
-    fmt.Println("aUrl:", aUrl)
-
-    ref = firebase.NewReference(aUrl).Auth(fbSecret).Export(false)
     var err error
+
+    //Send To main message
+    mUrl := fbUrl + "/messages/" + m.Id + "/responses"
+    fmt.Println("mUrl:", mUrl)
+    ref = firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
     if err = ref.Push(&r); err != nil {
         panic(err)
     }
+
+    //Send To original author
+    aUrl := fbUrl + "/users/" + m.User.Uid + "/messages/sent/" + m.Id + "/responses"
+    fmt.Println("aUrl:", aUrl)
+    ref = firebase.NewReference(aUrl).Auth(fbSecret).Export(false)
+    if err = ref.Push(&r); err != nil {
+        panic(err)
+    }
+
     //Notify Author
     n := r.User.DisplayName + " responded to " + m.Title
     if res := parsePush.NotifyUser(m.User.Uid, n); res != 200 {
