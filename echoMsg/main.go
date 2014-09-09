@@ -149,7 +149,6 @@ func SendResponse(r *Response) int {
  var m *Message
  //Get original message object
  m = GetMessage(r.Id)
- m.CreatedAt = "69696969696"
 
   fmt.Println("SendResponse called for:", r)
   if as := AuthorSendResponse(m, r); as != 200 {
@@ -247,12 +246,23 @@ func SendBookmark(r *BookmarkRequest) int {
 
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
-  mUrl := fbUrl + "/messages/"+ r.Message.Id +"/bookmarkedBy/"+ r.User.Uid
+  
+  var err error
+
   //Add bookmarker's uid to BookmarkedBy of main message
+  mUrl := fbUrl + "/messages/"+ r.Message.Id +"/bookmarkedBy/"+ r.User.Uid
   mesRef := firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
-  if err := mesRef.Write(r.User); err != nil {
+  if err = mesRef.Write(r.User); err != nil {
     panic(err)
   }
+
+  //Add bookmarker's uid to BookmarkedBy of sender's message
+  sUrl := fbUrl + "/users/" + r.Message.User.Uid + "/messages/sent/"+ r.Message.Id +"/bookmarkedBy/"+ r.User.Uid
+  sRef := firebase.NewReference(sUrl).Auth(fbSecret).Export(false)
+  if err = sRef.Write(r.User); err != nil {
+    panic(err)
+  }
+
   fmt.Println("Message with id:", r.Message.Id, " has been bookmarked by: ", r.User)
   //notify Author (maybe recipients)
   aMsg := r.User.DisplayName + " bookmarked " + r.Message.Title
