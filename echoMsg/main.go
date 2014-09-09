@@ -80,24 +80,34 @@ func UpdateImgUrl(m *Message) int {
   fmt.Println("UpdateImgUrl Called for", m)
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
-  //Update Main message
-    mUrl := fbUrl + "/messages/" + m.Id + "/image"
-    fmt.Println("mUrl:", mUrl)
-    mainRef := firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
-    var err error
-    if err = mainRef.Write(&m.Image); err != nil {
-        panic(err)
-    }
-    //Update Author Message
-    aUrl := fbUrl + "/users/" + m.User.Uid + "/messages/sent/"+ m.Id + "/image"
-    fmt.Println("aUrl:", aUrl)
+  var err error
+  
 
-    authRef := firebase.NewReference(aUrl).Auth(fbSecret).Export(false)
-    var authErr error
-    if authErr = authRef.Write(&m.Image); err != nil {
-        panic(authErr)
-    }
-    return 200
+  mUrl := fbUrl + "/messages/" + m.Id
+  fmt.Println("mUrl:", mUrl)
+
+  // update image url
+  imageRef := firebase.NewReference(mUrl+"/image").Auth(fbSecret).Export(false)
+  if err = imageRef.Write(&img); err != nil {
+      panic(err)
+  }
+
+  // update message id 
+  msgRef := firebase.NewReference(mUrl+"/id").Auth(fbSecret).Export(false)
+  if err = msgRef.Write(&mid); err != nil {
+      panic(err)
+  }
+
+  //Update Author Message
+  aUrl := fbUrl + "/users/" + m.User.Uid + "/messages/sent/"+ m.Id + "/image"
+  fmt.Println("aUrl:", aUrl)
+  authRef := firebase.NewReference(aUrl).Auth(fbSecret).Export(false)
+  var authErr error
+  if authErr = authRef.Write(&m.Image); err != nil {
+      panic(authErr)
+  }
+
+  return 200
 }
 //Send Response To Author and Recipients
 func SendResponse(ri *ResponseInfo) int {
