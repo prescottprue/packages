@@ -77,7 +77,7 @@ func PushMessageToRecipients(m *Message) int {
         panic(err)
     }
     //Notify Recipient
-    parsePush.NotifyUser(m.User.Uid, "New Echo from " + m.User.DisplayName)
+    parsePush.NotifyUser(uid, "New Echo from " + m.User.DisplayName)
   }
 	return 200
 }
