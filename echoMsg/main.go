@@ -25,7 +25,7 @@ type Message struct {
     Id string `json:"id"`
 }
 type Response struct {
-	CreatedAt string `json:"createdAt"`
+	// CreatedAt string `json:"createdAt"`
 	User User `json:"user"`
 	Image Image `json:"image"`
   Id string `json:"id"`
@@ -174,7 +174,7 @@ func RecipientsSendResponse(m *Message, r *Response) int {
   for ind, uid := range m.Recipients {
     fmt.Println("Recipient:", ind)
     //Send To Each Recipient
-    rUrl = fbUrl + "/users/" + uid + "/messages/received/" + m.Id + "/responses"
+    rUrl = fbUrl + "/users/" + uid + "/messages/received/" + m.Id + "/response"
     fmt.Println("rUrl:", rUrl)
 
     ref = firebase.NewReference(rUrl).Auth(fbSecret).Export(false)
