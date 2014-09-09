@@ -1,6 +1,34 @@
 # EchoMsg Package
 
 ### Go package to handle message actions for [echo-mobile](http://www.github.com/bessolabs/echo-mobile)'s server [echo-go](http://www.github.com/bessolabs/echo-go)
+### Types
+User {
+    Uid string 
+    DisplayName string 
+}
+Image {
+  Url string
+}
+Message {
+    Title string 
+    CreatedAt string
+    Recipients []string
+    User User 
+    Image Image 
+    Id string
+}
+Response {
+	CreatedAt 
+	User User 
+	Image Image 
+}
+ResponseInfo {
+  Image io.Reader 
+  User User 
+  Mid string  
+  CreatedAt string 
+  Id string
+}
 
 ### Functions
 #### Initial Message
