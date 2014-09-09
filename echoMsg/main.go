@@ -13,7 +13,6 @@ type User struct {
     Uid string `json:"uid"`
     DisplayName string `json:"displayName"`
 }
-
 type Image struct {
   Url string `json:"url"`
 }
@@ -36,6 +35,10 @@ type ResponseInfo struct {
   Mid string  `json:"mid"`
   CreatedAt string `json:"createdAt"`
   Id string `json:"id"`
+}
+type BookmarkRequest struct {
+  User User `json:"user"`
+  Message Message `json:"message"`
 }
 func SendMsg(m *Message) int {
 	log.Println("SendMsg called with", m)
@@ -195,4 +198,23 @@ func GetMessage(mid string) *Message {
         panic(err)
     }
   return msg
+}
+func SendBookmark(r *BookmarkRequest) int {
+  fmt.Println("SendBookmark Called with", r)
+
+  fbUrl := os.Getenv("ECHO_DEV_FB_URL")
+  fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
+  mUrl := fbUrl + "/messages/"+ r.Message.Id +"/bookmarkedBy/"+ r.User.Uid
+  //Add bookmarker's uid to BookmarkedBy of main message
+  mesRef := firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
+  if err := mesRef.Write(r.User); err != nil {
+    panic(err)
+  }
+  fmt.Println("Message with id:", r.Message.Id, " has been bookmarked by: ", r.User)
+  //notify Author (maybe recipients)
+  aMsg := r.User.DisplayName + " bookmarked " + r.Message.Title
+  parsePush.NotifyUser(r.Message.User.Uid, aMsg)
+  fmt.Println(r.Message.User.DisplayName + " was sent a push notification about the bookmark")
+
+  return 200
 }

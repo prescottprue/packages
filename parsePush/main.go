@@ -23,7 +23,7 @@ type PushMessage struct {
 }
 //Get Push Id from firebase then notify
 func NotifyUser(uid string, m string) int {
-  fmt.Println("SendPushNotificaiton called");
+  fmt.Println("NotifyUser called to notify ", uid, " with ", m);
   //[TODO] Replace this with a local SQL Database 
   //Get pushID from firebase
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
@@ -40,6 +40,7 @@ func NotifyUser(uid string, m string) int {
   if err = mainRef.Value(&pid); err != nil {
     panic(err)
   }
+  fmt.Println("PushId of ", pid, " retreived from firbase for ", uid)
   //Create Push Message with message and pushId
   pd := PushData{m}
   pw := PushWhere{"ios", pid}
