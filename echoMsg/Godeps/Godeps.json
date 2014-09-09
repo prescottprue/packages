@@ -1,0 +1,22 @@
+{
+	"ImportPath": "github.com/BessoLabs/packages/echoMsg",
+	"GoVersion": "go1.3.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/bessolabs/packages/parsePush",
+			"Rev": "cd85244cc7dc356b98ef56f50cc5d8da6fc62162"
+		},
+		{
+			"ImportPath": "github.com/bessolabs/packages/s3Upload",
+			"Rev": "cd85244cc7dc356b98ef56f50cc5d8da6fc62162"
+		},
+		{
+			"ImportPath": "github.com/kr/s3",
+			"Rev": "495b6d5419e7b4257b0fa75fb4552f5fe4fa879a"
+		},
+		{
+			"ImportPath": "github.com/melvinmt/firebase",
+			"Rev": "d3a1534315a6e544dccc7834243776d75d6ffbad"
+		}
+	]
+}
