@@ -46,6 +46,20 @@ type BookmarkRequest struct {
   User User `json:"user"`
   Message Message `json:"message"`
 }
+//Yells
+type Yell struct {
+    Title string `json:"title"`
+    // CreatedAt string `json:"createdAt"`
+    User User `json:"user"`
+    Image Image `json:"image"`
+    Yid string `json:"yid"`
+}
+type YellInfo struct {
+    Title string `json:"title"`
+    // CreatedAt string `json:"createdAt"`
+    User User `json:"user"`
+}
+//-----------Echos---------------
 func SendMsg(m *Message) int {
 	log.Println("SendMsg called with", m)
 	
@@ -57,32 +71,8 @@ func SendMsg(m *Message) int {
 	}
 	return 200
 }
-func PushMessageToRecipients(m *Message) int {
-	log.Println("RecipientsSend called")
-	fbUrl := os.Getenv("ECHO_DEV_FB_URL")
-  fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
-  //recipient url
-  var rUrl string
-  var ref *firebase.Reference
-  //For loop for recipients
-  for ind, uid := range m.Recipients {
-    fmt.Println("Recipient:", ind)
-    //Send To Each Recipient
-    rUrl = fbUrl + "/users/" + uid + "/messages/received/" + m.Id
-    fmt.Println("rUrl:", rUrl)
-
-    ref = firebase.NewReference(rUrl).Auth(fbSecret).Export(false)
-    var err error
-    if err = ref.Write(&m); err != nil {
-        panic(err)
-    }
-    //Notify Recipient
-    parsePush.NotifyUser(uid, "New Echo from " + m.User.DisplayName)
-  }
-	return 200
-}
 func UpdateImgUrl(m *Message) int {
-	//Add imgUrl to original msg and author's sent folder
+  //Add imgUrl to original msg and author's sent folder
   fmt.Println("UpdateImgUrl Called for", m)
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
@@ -115,6 +105,31 @@ func UpdateImgUrl(m *Message) int {
 
   return 200
 }
+func PushMessageToRecipients(m *Message) int {
+	log.Println("RecipientsSend called")
+	fbUrl := os.Getenv("ECHO_DEV_FB_URL")
+  fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
+  //recipient url
+  var rUrl string
+  var ref *firebase.Reference
+  //For loop for recipients
+  for ind, uid := range m.Recipients {
+    fmt.Println("Recipient:", ind)
+    //Send To Each Recipient
+    rUrl = fbUrl + "/users/" + uid + "/messages/received/" + m.Id
+    fmt.Println("rUrl:", rUrl)
+
+    ref = firebase.NewReference(rUrl).Auth(fbSecret).Export(false)
+    var err error
+    if err = ref.Write(&m); err != nil {
+        panic(err)
+    }
+    //Notify Recipient
+    parsePush.NotifyUser(uid, "New Echo from " + m.User.DisplayName)
+  }
+	return 200
+}
+
 //Send Response with ri having io.Reader To Author and Recipients
 // func SendResponse(ri *ResponseInfo) int {
 // 	l := "userData/"+ ri.User.Uid + "/"+ ri.Mid + "/file.jpg"
@@ -269,5 +284,62 @@ func SendBookmark(r *BookmarkRequest) int {
   parsePush.NotifyUser(r.Message.User.Uid, aMsg)
   fmt.Println(r.Message.User.DisplayName + " was sent a push notification about the bookmark")
 
+  return 200
+}
+//---------------Yell Action Functions-----------//
+// Handled on client using /api/upload
+// func SendYell(f *io.Reader, yd *YellInfo) int {
+//   fmt.Println("SendYell Called with", y)
+//   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
+//   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
+//   //Create original yell object 
+//   oUrl := fbUrl +"/yells"
+//   oRef := firebase.NewReference(oUrl).Auth(fbSecret).Export(false)
+//   var oerr error
+//   if oerr = oRef.Push(yd); err != nil {
+//     panic(err)
+//   }
+//   //update main yell object with image url
+//   mUrl := fbUrl + "/yells/"+ y.Id +"/responses"
+//   mesRef := firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
+//   var err error
+//   if err = mesRef.Push(yr); err != nil {
+//     panic(err)
+//   }
+//   fmt.Println("SendYellResponse posted response to main yell object")
+
+// }
+
+// type Response struct {
+//   // CreatedAt string `json:"createdAt"`
+//   User User `json:"user"`
+//   Image Image `json:"image"`
+//   Id string `json:"id"`
+// }
+func SendYellResponse(yr *Response) int {
+  fmt.Println("SendYellResponse Called with", yr)
+  fbUrl := os.Getenv("ECHO_DEV_FB_URL")
+  fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
+  //Post Response to main yell object
+  mUrl := fbUrl + "/yells/"+ yr.Id +"/responses"
+  mesRef := firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
+  var err error
+  if err = mesRef.Push(yr); err != nil {
+    panic(err)
+  }
+  fmt.Println("SendYellResponse posted response to main yell object")
+
+  //Update ResponseCounter on authors yell object
+  //[TODO] Get authors uid from firebase
+  // aUrl := fbUrl + "/users/"+ yr.Id +"/responses"
+  // mesRef := firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
+  // var err error
+  // if err = mesRef.Push(yr); err != nil {
+  //   panic(err)
+  // }
+  // fmt.Println("SendYellResponse updated author's counter")
+
+  //Notify Author Of Response
+  parsePush.NotifyUser(yr.Message.User.Uid, aMsg)
   return 200
 }
