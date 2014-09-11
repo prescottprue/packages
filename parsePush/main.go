@@ -7,7 +7,7 @@ import (
   "github.com/melvinmt/firebase"
   "encoding/json"
   "bytes"
-  "io/ioutil"
+  "log"
 )
 
 type PushData struct {
@@ -23,7 +23,7 @@ type PushMessage struct {
 }
 //Get Push Id from firebase then notify
 func NotifyUser(uid string, m string) int {
-  fmt.Println("NotifyUser called to notify ", uid, " with ", m);
+  log.Println(" \033[42m INIT [parsePush.NotifyUser] args[uid:",uid,",m:",m,"] \033[0m ")
   //[TODO] Replace this with a local SQL Database 
   //Get pushID from firebase
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
@@ -34,20 +34,17 @@ func NotifyUser(uid string, m string) int {
   uUrl := fbUrl + "/users/" + uid +"/pushId"
   fmt.Println("uUrl:", uUrl)
   mainRef := firebase.NewReference(uUrl).Auth(fbSecret).Export(false)
+  
   var err error
-  var pid string
-
+  var pid *string
   if err = mainRef.Value(&pid); err != nil {
     panic(err)
   }
-  fmt.Println("PushId of ", pid, " retreived from firbase for ", uid)
   //Create Push Message with message and pushId
   pd := PushData{m}
-  pw := PushWhere{"ios", pid}
+  pw := PushWhere{"ios", *pid}
   pm := PushMessage{pd, pw}
-
   jsonMsg, _ := json.Marshal(pm)
-  fmt.Printf("Pushing Message: %s\n", jsonMsg)
   contentReader := bytes.NewReader(jsonMsg)
   req, _ := http.NewRequest("POST", "https://api.parse.com/1/push", contentReader)
   req.Header.Set("Content-Type", "application/json")
@@ -56,8 +53,9 @@ func NotifyUser(uid string, m string) int {
   client := &http.Client{}
   resp, _ := client.Do(req)
   defer resp.Body.Close()
-  body, _ := ioutil.ReadAll(resp.Body)
-  fmt.Printf("Push completed %s\n", body)
+  // body, _ := ioutil.ReadAll(resp.Body)
+
   //body contains {"result": true}
+  log.Println(" \033[41m RETURN [parsePush.NotifyUser] NotifyUser \033[0m ")
   return resp.StatusCode
 }

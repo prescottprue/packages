@@ -60,7 +60,7 @@ type YellInfo struct {
     User User `json:"user"`
 }
 func GetMessage(mid string) *Message {
-  fmt.Println("GetMessage Called with", mid)
+  log.Println(" \033[42m INIT [echoMsg] GetMessage args[mid:",mid,"] \033[0m ")
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
   //recipient url
@@ -77,10 +77,13 @@ func GetMessage(mid string) *Message {
         panic(err)
     }
     //[TODO] Return Status Int
+  log.Println(" \033[41m RETURN [echoMsg] GetMessage \033[0m ")
   return msg
 }
 //-----------Echos---------------
 func SendMessage(f io.Reader, mid string) int {
+  log.Println(" \033[42m INIT [echoMsg] SendMessage \033[0m ")
+  // var f *multipart.File
   //Get Message/Image Info from firebase
   msg := GetMessage(mid)
   l := msg.Image.Url
@@ -94,11 +97,12 @@ func SendMessage(f io.Reader, mid string) int {
   if rs != 200 {
     panic("Error Pushing to recipients")
   }
+  log.Println(" \033[41m RETURN [echoMsg] SendMessage \033[0m ")
   return rs
 }
 func PushMessageToRecipients(m *Message) int {
- log.Println("RecipientsSend called")
- fbUrl := os.Getenv("ECHO_DEV_FB_URL")
+  log.Println(" \033[42m INIT [echoMsg] PushMessageToRecipients called \033[0m ")
+  fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
   //recipient url
   var rUrl string
@@ -118,7 +122,8 @@ func PushMessageToRecipients(m *Message) int {
     //Notify Recipient
     parsePush.NotifyUser(uid, "New Echo from " + m.User.DisplayName)
   }
- return 200
+  log.Println(" \033[41m RETURN [echoMsg] PushMessageToRecipients ret(200) \033[0m ")
+  return 200
 }
 
 //Send Response with ri having io.Reader To Author and Recipients
