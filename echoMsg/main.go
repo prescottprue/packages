@@ -3,10 +3,10 @@ package echoMsg
 import (
 	"github.com/melvinmt/firebase"
 	"github.com/bessolabs/packages/parsePush"
-	// "github.com/bessolabs/packages/s3Upload"
+	"github.com/bessolabs/packages/s3Upload"
 	"log"
 	"os"
-  // "io"
+  "io"
 	"fmt"
 )
 type User struct {
@@ -59,55 +59,46 @@ type YellInfo struct {
     // CreatedAt string `json:"createdAt"`
     User User `json:"user"`
 }
-//-----------Echos---------------
-func SendMsg(m *Message) int {
-	log.Println("SendMsg called with", m)
-	
-	if us := UpdateImgUrl(m); us != 200 {
-		fmt.Println("Url Update failed:", us)
-	}
-	if rs := PushMessageToRecipients(m); rs != 200 {
-		fmt.Println("Recipients send failed:", rs)
-	}
-	return 200
-}
-func UpdateImgUrl(m *Message) int {
-  //Add imgUrl to original msg and author's sent folder
-  fmt.Println("UpdateImgUrl Called for", m)
+func GetMessage(mid string) *Message {
+  fmt.Println("GetMessage Called with", mid)
   fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
-  var err error
-  
+  //recipient url
+  var mUrl string
+  var ref *firebase.Reference
+  var msg *Message
+    //Send To Each Recipient
+    mUrl = fbUrl + "/messages/"+ mid
+    fmt.Println("mUrl:", mUrl)
 
-  mUrl := fbUrl + "/messages/" + m.Id
-  fmt.Println("mUrl:", mUrl)
-
-  // update image url
-  imageRef := firebase.NewReference(mUrl+"/image").Auth(fbSecret).Export(false)
-  if err = imageRef.Write(&m.Image); err != nil {
-      panic(err)
+    ref = firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
+    var err error
+    if err = ref.Value(&msg); err != nil {
+        panic(err)
+    }
+    //[TODO] Return Status Int
+  return msg
+}
+//-----------Echos---------------
+func SendMessage(f io.Reader, mid string) int {
+  //Get Message/Image Info from firebase
+  msg := GetMessage(mid)
+  l := msg.Image.Url
+  //Upload Image to S3
+  us, _ := s3Upload.UploadImg(f, l)
+  if us != 200 {
+    panic("Error uploading image")
   }
-
-  // update message id 
-  msgRef := firebase.NewReference(mUrl+"/id").Auth(fbSecret).Export(false)
-  if err = msgRef.Write(&m.Id); err != nil {
-      panic(err)
+  //Send Message To Recipients
+  rs := PushMessageToRecipients(msg)
+  if rs != 200 {
+    panic("Error Pushing to recipients")
   }
-
-  //Update Author Message
-  aUrl := fbUrl + "/users/" + m.User.Uid + "/messages/sent/"+ m.Id + "/image"
-  fmt.Println("aUrl:", aUrl)
-  authRef := firebase.NewReference(aUrl).Auth(fbSecret).Export(false)
-  var authErr error
-  if authErr = authRef.Write(&m.Image); err != nil {
-      panic(authErr)
-  }
-
-  return 200
+  return rs
 }
 func PushMessageToRecipients(m *Message) int {
-	log.Println("RecipientsSend called")
-	fbUrl := os.Getenv("ECHO_DEV_FB_URL")
+ log.Println("RecipientsSend called")
+ fbUrl := os.Getenv("ECHO_DEV_FB_URL")
   fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
   //recipient url
   var rUrl string
@@ -127,7 +118,7 @@ func PushMessageToRecipients(m *Message) int {
     //Notify Recipient
     parsePush.NotifyUser(uid, "New Echo from " + m.User.DisplayName)
   }
-	return 200
+ return 200
 }
 
 //Send Response with ri having io.Reader To Author and Recipients
@@ -237,25 +228,7 @@ func AuthorSendResponse(m *Message, r *Response) int {
     }
 	return 200
 }
-func GetMessage(mid string) *Message {
-	fmt.Println("GetMessage Called with", mid)
-  fbUrl := os.Getenv("ECHO_DEV_FB_URL")
-  fbSecret := os.Getenv("ECHO_DEV_FB_SECRET")
-  //recipient url
-  var mUrl string
-  var ref *firebase.Reference
-  var msg *Message
-    //Send To Each Recipient
-    mUrl = fbUrl + "/messages/"+ mid
-    fmt.Println("mUrl:", mUrl)
 
-    ref = firebase.NewReference(mUrl).Auth(fbSecret).Export(false)
-    var err error
-    if err = ref.Value(&msg); err != nil {
-        panic(err)
-    }
-  return msg
-}
 func SendBookmark(r *BookmarkRequest) int {
   fmt.Println("SendBookmark Called with", r)
 
@@ -340,6 +313,7 @@ func SendYellResponse(yr *Response) int {
   // fmt.Println("SendYellResponse updated author's counter")
 
   //Notify Author Of Response
-  parsePush.NotifyUser(yr.Message.User.Uid, aMsg)
+  //[TODO] Get author uid
+  // parsePush.NotifyUser(yr.User.Uid, aMsg)
   return 200
 }
