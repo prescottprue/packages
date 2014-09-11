@@ -20,7 +20,7 @@ type Message struct {
     Title string `json:"title"`
     // CreatedAt string `json:"createdAt"`
     Recipients []string `json:"recipients"`
-    User User `json:"user"`
+    User User `json:"author"`
     Image Image `json:"image"`
     Id string `json:"id"`
 }
